@@ -19,6 +19,11 @@ from typing import Callable, Iterable
 
 import pandas as pd
 
+try:
+    from tqdm.auto import tqdm
+except Exception:  # pragma: no cover - dependencia opcional para feedback visual
+    tqdm = None
+
 # Garanta que os caminhos relativos de data/ funcionem mesmo se o script for
 # executado de outro diretorio.
 ROOT_DIR = Path(__file__).resolve().parent
@@ -26,21 +31,21 @@ SCRIPTS_DIR = ROOT_DIR / "scripts"
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
-from cpf_detection import adicionar_coluna_cpf
-from email_detection import adicionar_coluna_email
-from nome_detection import adicionar_coluna_nome
-from rg_detection import adicionar_coluna_rg
-from telefone_detection import adicionar_coluna_telefone
+from cpf_detection import detectar_cpf
+from email_detection import detectar_email
+from nome_detection import detectar_nome
+from rg_detection import detectar_rg
+from telefone_detection import detectar_telefone
 
 ENTRADA_DIR = ROOT_DIR / "entrada"
 SAIDA_DIR = ROOT_DIR / "saida"
 
-DETECTORS: tuple[tuple[str, Callable[[pd.DataFrame], pd.DataFrame]], ...] = (
-    ("email", adicionar_coluna_email),
-    ("cpf", adicionar_coluna_cpf),
-    ("telefone", adicionar_coluna_telefone),
-    ("rg", adicionar_coluna_rg),
-    ("nome", adicionar_coluna_nome),
+DETECTORS: tuple[tuple[str, Callable[[str], int]], ...] = (
+    ("email", detectar_email),
+    ("cpf", detectar_cpf),
+    ("telefone", detectar_telefone),
+    ("rg", detectar_rg),
+    ("nome", detectar_nome),
 )
 DETECTOR_ORDER = tuple(det[0] for det in DETECTORS)
 
@@ -83,15 +88,35 @@ def executar_detectores(
     evitando sobrescrita ou execucoes desnecessarias.
     """
     out = df.copy()
-    for coluna, adicionar in DETECTORS:
+
+    detector_iter = (
+        tqdm(DETECTORS, desc="Executando detectores", unit="coluna")
+        if tqdm is not None
+        else DETECTORS
+    )
+
+    for coluna, detectar in detector_iter:
         if reuse_existing and coluna in out.columns:
             out[coluna] = coerce_binary_series(out[coluna], coluna)
             continue
-        out = adicionar(out)
+
+        out[coluna] = _progress_apply(
+            out["texto_mascarado"], detectar, desc=f"Detectando {coluna}"
+        )
         if coluna not in out.columns:
             raise KeyError(f"Detector nao adicionou a coluna esperada '{coluna}'.")
         out[coluna] = coerce_binary_series(out[coluna], coluna)
     return out
+
+
+def _progress_apply(
+    series: pd.Series, detector: Callable[[str], int], desc: str
+) -> pd.Series:
+    """Aplica um detector exibindo barra de progresso quando tqdm estiver instalado."""
+    if tqdm is None:
+        return series.apply(detector)
+    tqdm.pandas(desc=desc)
+    return series.progress_apply(detector)
 
 
 def preencher_nao_publico(

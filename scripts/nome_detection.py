@@ -164,6 +164,7 @@ def _consultar_openai_tokens(fragmento: str, tokens: list[str]) -> dict[str, flo
                 {"role": "user", "content": user_prompt},
             ],
             temperature=0,
+            response_format={"type": "json_object"},
         )
     except Exception as exc:
         print(f"Aviso: falha na consulta OpenAI ({exc}); seguindo sem lookup.")
@@ -180,7 +181,10 @@ def _consultar_openai_tokens(fragmento: str, tokens: list[str]) -> dict[str, flo
     try:
         parsed = json.loads(content)
     except json.JSONDecodeError:
-        print("Aviso: resposta OpenAI sem JSON valido; ignorando.")
+        preview = content
+        if len(preview) > 120:
+            preview = preview[:117] + "..."
+        print(f"Aviso: resposta OpenAI sem JSON valido; ignorando. Trecho: {preview}")
         return {}
 
     normalized: dict[str, float] = {}

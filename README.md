@@ -1,49 +1,68 @@
-# Detector de Informações Pessoais - e-SIC
+# 🔒 Detector de Informações Pessoais - e-SIC
 
-Este programa identifica informações pessoais em planilhas Excel, como e-mail, CPF, telefone, RG e nome.
+> **Identifique automaticamente dados sensíveis em documentos públicos**
 
-## O que você precisa
+Ferramenta que detecta e protege informações pessoais em planilhas Excel, garantindo conformidade com **LGPD** e **Lei de Acesso à Informação**.
 
-- Python 3.10 ou mais novo
-- Uma planilha Excel com os dados (exemplo: `entrada/AMOSTRA.xlsx`)
+## ✨ O que faz
 
-## Como instalar
+Detecta automaticamente:
+- 📧 **E-mails**
+- 🆔 **CPF** e **RG**
+- 📱 **Telefones**
+- 👤 **Nomes próprios** (com IA)
 
-1. Abra o terminal na pasta do projeto
-2. Digite os comandos abaixo:
+Marca linhas com dados sensíveis e gera relatório estruturado.
+
+## 🎯 Por que usar
+
+- ⚖️ Conformidade com LGPD artigo 18 (direito ao esquecimento)
+- 🚀 Processamento em batch de documentos
+- 🎯 Detecção com priorização inteligente
+- 📊 Resultados verificáveis com gabarito
+
+## 📋 Requisitos
+
+- Python 3.10+
+- Planilha Excel (ou CSV)
+
+**Opcional:** Chave OpenAI para detecção de nomes com IA
+
+## ⚡ Quick Start (macOS/Linux)
 
 ```bash
+# Clone e configure
 python -m venv .venv
-.\.venv\Scripts\activate
+source .venv/bin/activate
 pip install -r requirements.txt
+
+# Execute
+python nao_publico.py entrada/AMOSTRA.xlsx
 ```
+🚀 Como usar
 
-## Como usar
-
-### Detectar informações pessoais na planilha
-
+### 1️⃣ Processamento completo
 ```bash
 python nao_publico.py entrada/AMOSTRA.xlsx
 ```
+Gera: `saida/AMOSTRA_com_nao_publico.xlsx` com coluna `nao_publico` (0 ou 1)
 
-O programa cria uma nova planilha na pasta `saida` com uma coluna mostrando quais linhas têm informações pessoais.
-
-### Ver se o resultado está correto
-
+### 2️⃣ Validar contra gabarito
 ```bash
 python avaliar_nao_publico.py saida/AMOSTRA_com_nao_publico.xlsx
 ```
+Compara resultados com `entrada/gabarito.json` e mostra acurácia
 
-Isso compara o resultado com o gabarito e mostra se está acertando.
-
-### Testar apenas um tipo de informação
-
-Você pode testar cada detector separadamente:
-
+### 3️⃣ Testar detectores individuais
 ```bash
 python scripts/email_detection.py
 python scripts/cpf_detection.py
 python scripts/telefone_detection.py
+python scripts/rg_detection.py
+python scripts/nome_detection.py
+```
+
+### 4️⃣ Rodar suite de testespython scripts/telefone_detection.py
 python scripts/rg_detection.py
 python scripts/nome_detection.py
 ```
@@ -56,24 +75,49 @@ python -m unittest tests/test_detectores.py
 
 ## Como funciona
 
-- O programa lê uma planilha Excel
-- Procura por e-mails, CPFs, telefones, RGs e nomes
-- Marca as linhas que têm essas informações
-- Cria uma nova planilha com os resultados
+- O🔍 Como funciona
 
-## Organização dos arquivos
+```
+Entrada (Excel)
+    ↓
+[Email] → [CPF] → [Telefone] → [RG] → [Nome]
+    ↓ (prioridade cascata)
+Encontrou? Marca 1 e passa
+    ↓
+Saída (Excel + coluna nao_publico)
+```
 
-- `entrada/` - coloque suas planilhas aqui
-- `saida/` - os resultados aparecem aqui
-- `scripts/` - programas que fazem cada tipo de detecção
-- `data/` - dados auxiliares do programa
-- `tests/` - testes automáticos
+**Lógica de priorização:** Para cada célula, testa detectores em ordem até encontrar correspondência.
 
-## Recurso extra: OpenAI para nomes
+## 📁 Estrutura do projeto
 
-O detector de nomes pode usar inteligência artificial para melhorar. Para isso:
+```
+pii-detector-esic/
+├── nao_publico.py           # Motor principal
+├── avaliar_nao_publico.py   # Validação
+├── entrada/                 # Suas planilhas
+├── saida/                   # Resultados
+├── scripts/                 # Detectores (email, cpf, telefone, rg, nome)
+├── data/                    # Weights e dados auxiliares
+└── tests/                   # Suite de testes
+```
 
-1. Configure a variável `OPENAI_API_KEY` com sua chave
-2. Configure `NOME_OPENAI_LOOKUP=1`
+## 🤖 Detecção de Nomes com OpenAI
 
-Sem essas configurações, o programa funciona normalmente mas só com as regras básicas.
+Melhora precisão de nomes não conhecidos usando IA:
+
+```bash
+# Método 1: Variáveis de ambiente
+export NOME_OPENAI_LOOKUP=1
+export OPENAI_API_KEY="sk-proj-..."
+python scripts/nome_detection.py
+
+# Método 2: Um só comando
+NOME_OPENAI_LOOKUP=1 OPENAI_API_KEY="sk-proj-..." python scripts/nome_detection.py
+
+# Método 3: Permanente (~/.zshrc ou ~/.bashrc)
+export NOME_OPENAI_LOOKUP=1
+export OPENAI_API_KEY="sk-proj-..."
+```
+
+**Cache automático:** Pesos são salvos em `data/nome_weights.csv` e reutilizados (sem chamadas API duplicadas)
