@@ -1,0 +1,14 @@
+.venv
+
+# Pastas de dados (entrada/saida) - mantem apenas .gitkeep
+entrada/*
+!entrada/.gitkeep
+saida/*
+!saida/.gitkeep
+
+# PDF documents
+*.pdf
+
+# Python cache artifacts
+__pycache__/
+*.py[cod]
