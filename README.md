@@ -1,5 +1,7 @@
 # Detector de informacoes pessoais - e-SIC
 
+Video: https://unbbr-my.sharepoint.com/:v:/g/personal/marcus_silva_unb_br/IQAcqh5Xms21SqAmflW4aBIRASdINtf6R3ba7dSJG_FVQ1o?e=9epvah
+
 ## Objetivo da solucao
 
 Identificar e marcar informacoes pessoais em planilhas do e-SIC, gerando uma coluna final de sinalizacao (`nao_publico`) e o detector prioritario que motivou a marcacao.
